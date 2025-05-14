@@ -1,16 +1,9 @@
 import akshare as ak
-import pymysql
 from sqlalchemy import create_engine
 
 
 def save_stock_info_to_db(stock_code, start_date, end_date):
-    """
-    获取指定股票的历史行情数据，自动匹配股票名称，并写入数据库。
 
-    :param stock_code: 股票代码（如 '000001'）
-    :param start_date: 开始日期，格式为 'YYYYMMDD'
-    :param end_date: 结束日期，格式为 'YYYYMMDD'
-    """
     try:
         # 获取所有A股股票代码和名称
         stock_list_df = ak.stock_info_a_code_name()
