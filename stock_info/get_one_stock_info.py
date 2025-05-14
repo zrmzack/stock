@@ -1,9 +1,9 @@
 import akshare as ak
-from sqlalchemy import create_engine
+import pandas as pd
+from sqlalchemy import create_engine, text
 
 
-def save_stock_info_to_db(stock_code, start_date, end_date):
-
+def save_one_stock_info_to_db(stock_code, start_date, end_date):
     try:
         # 获取所有A股股票代码和名称
         stock_list_df = ak.stock_info_a_code_name()
@@ -42,6 +42,9 @@ def save_stock_info_to_db(stock_code, start_date, end_date):
         df["stock_id"] = stock_code
         df["stock_name"] = stock_name
 
+        # 转换时间格式
+        df["stock_time"] = pd.to_datetime(df["stock_time"]).dt.date
+
         # 按列顺序重排
         df = df[[
             "stock_time", "stock_id", "stock_name", "stock_kp", "stock_sp", "stock_zg",
@@ -63,12 +66,30 @@ def save_stock_info_to_db(stock_code, start_date, end_date):
                      f"{db_config['host']}:{db_config['port']}/{db_config['database']}?charset={db_config['charset']}"
         engine = create_engine(engine_str)
 
-        # 写入数据库
-        df.to_sql(name='stock_info', con=engine, if_exists='append', index=False)
+        # 查询已有数据
+        with engine.connect() as conn:
+            result = conn.execute(text("""
+                SELECT stock_time, stock_id FROM stock_info
+                WHERE stock_id = :stock_id AND stock_time IN :stock_time_list
+            """), {
+                "stock_id": stock_code,
+                "stock_time_list": tuple(df["stock_time"].tolist())
+            })
+            existing = set(result.fetchall())
 
-        print(f"✅ 股票 {stock_code}（{stock_name}）数据写入成功，共 {len(df)} 条。")
+        # 过滤重复
+        df = df[~df.set_index(["stock_time", "stock_id"]).index.isin(existing)]
+
+        # 插入新数据
+        if not df.empty:
+            df.to_sql(name='stock_info', con=engine, if_exists='append', index=False)
+            print(f"✅ 股票 {stock_code}（{stock_name}）写入成功，新插入 {len(df)} 条。")
+        else:
+            print(f"⚠️ 股票 {stock_code}（{stock_name}）无新增数据，全部已存在。")
 
     except Exception as e:
         print(f"❌ 股票 {stock_code} 处理失败：{e}")
 
-save_stock_info_to_db("000001", "20240101", "20240513")
+
+# 示例调用
+save_stock_info_to_db("000001", "20220101", "20250514")

@@ -34,5 +34,4 @@ def truncate_table(table_name):
         cursor.close()
         conn.close()
 
-
 truncate_table('stock_info')
