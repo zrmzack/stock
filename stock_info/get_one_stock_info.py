@@ -92,4 +92,4 @@ def save_one_stock_info_to_db(stock_code, start_date, end_date):
 
 
 # 示例调用
-save_stock_info_to_db("000001", "20220101", "20250514")
+save_one_stock_info_to_db("000001", "20250514", "20250515")
