@@ -136,4 +136,4 @@ def check_single_stock_buy_signal(stock_input):
         conn.close()
 
 # 示例调用
-check_single_stock_buy_signal("000001")
+check_single_stock_buy_signal("688646")
